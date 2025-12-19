@@ -1,0 +1,27 @@
+{
+  "name": "kca-event-backend",
+  "version": "1.0.0",
+  "description": "KCA University Event Management System",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Run: node test-db.js\" && exit 0"
+  },
+  "keywords": [
+    "kca",
+    "university",
+    "events",
+    "management"
+  ],
+  "author": "KCA University",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.22.1",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
