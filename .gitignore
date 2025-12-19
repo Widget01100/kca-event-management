@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿# Dependencies
 node_modules/
 npm-debug.log*
@@ -73,6 +74,18 @@ public
 # Logs
 logs
 *.log
+=======
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+>>>>>>> b17a61c468a74344eb18814e41da4d4a0ac79c3d
 
 # Runtime data
 pids
@@ -106,6 +119,12 @@ build/Release
 node_modules/
 jspm_packages/
 
+<<<<<<< HEAD
+=======
+# Snowpack dependency directory (https://snowpack.dev/)
+web_modules/
+
+>>>>>>> b17a61c468a74344eb18814e41da4d4a0ac79c3d
 # TypeScript cache
 *.tsbuildinfo
 
@@ -115,11 +134,16 @@ jspm_packages/
 # Optional eslint cache
 .eslintcache
 
+<<<<<<< HEAD
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
+=======
+# Optional stylelint cache
+.stylelintcache
+>>>>>>> b17a61c468a74344eb18814e41da4d4a0ac79c3d
 
 # Optional REPL history
 .node_repl_history
@@ -130,10 +154,17 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
+<<<<<<< HEAD
 # dotenv environment variables file
 .env
 .env.test
 .env.production
+=======
+# dotenv environment variable files
+.env
+.env.*
+!.env.example
+>>>>>>> b17a61c468a74344eb18814e41da4d4a0ac79c3d
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -150,11 +181,36 @@ dist
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
+<<<<<<< HEAD
 # public
 
 # Vuepress build output
 .vuepress/dist
 
+=======
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
+
+# vuepress build output
+.vuepress/dist
+
+# vuepress v2.x temp and cache directory
+.temp
+.cache
+
+# Sveltekit cache directory
+.svelte-kit/
+
+# vitepress build output
+**/.vitepress/dist
+
+# vitepress cache directory
+**/.vitepress/cache
+
+# Docusaurus cache and generated files
+.docusaurus
+
+>>>>>>> b17a61c468a74344eb18814e41da4d4a0ac79c3d
 # Serverless directories
 .serverless/
 
@@ -164,12 +220,19 @@ dist
 # DynamoDB Local files
 .dynamodb/
 
+<<<<<<< HEAD
+=======
+# Firebase cache directory
+.firebase/
+
+>>>>>>> b17a61c468a74344eb18814e41da4d4a0ac79c3d
 # TernJS port file
 .tern-port
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
+<<<<<<< HEAD
 # Temporary folders
 tmp/
 temp/
@@ -189,3 +252,17 @@ Thumbs.db
 
 # Backend environment variables
 backend/.env
+=======
+# yarn v3
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Vite logs files
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+>>>>>>> b17a61c468a74344eb18814e41da4d4a0ac79c3d
