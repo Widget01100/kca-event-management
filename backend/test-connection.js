@@ -1,56 +1,59 @@
-const { Pool } = require("pg");
+﻿const { Pool } = require('pg');
+require('dotenv').config();
 
 const pool = new Pool({
-  host: "localhost",
-  port: 5432,
-  database: "kca_events_db",
-  user: "postgres",
-  password: "Francis123#"
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'kca_events_db',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'Francis123#'
 });
 
-async function test() {
+async function testConnection() {
+  console.log('🔍 Testing PostgreSQL connection...');
+  console.log('Host:', pool.options.host);
+  console.log('Database:', pool.options.database);
+  console.log('User:', pool.options.user);
+  
   try {
-    console.log("Testing PostgreSQL connection...");
-    
     const client = await pool.connect();
-    console.log("? Connected to database!");
+    console.log('✅ Successfully connected to PostgreSQL!');
     
-    // Test simple query
-    const result = await client.query("SELECT version()");
-    console.log("PostgreSQL Version:", result.rows[0].version);
+    // Test query
+    const result = await client.query('SELECT version()');
+    console.log('PostgreSQL Version:', result.rows[0].version);
     
-    // Test if tables exist
-    const tables = await client.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `);
+    // Check if our database exists
+    const dbResult = await client.query(
+      "SELECT 1 FROM pg_database WHERE datname = $1", 
+      [pool.options.database]
+    );
     
-    console.log("\n?? Tables in database:");
-    tables.rows.forEach(table => {
-      console.log("  -", table.table_name);
-    });
-    
-    // Count records
-    const users = await client.query("SELECT COUNT(*) FROM users");
-    const events = await client.query("SELECT COUNT(*) FROM events");
-    
-    console.log("\n?? Record counts:");
-    console.log("  Users:", users.rows[0].count);
-    console.log("  Events:", events.rows[0].count);
+    if (dbResult.rows.length > 0) {
+      console.log(`✅ Database "${pool.options.database}" exists`);
+    } else {
+      console.log(`❌ Database "${pool.options.database}" does not exist`);
+      console.log('Creating database...');
+      await client.query(`CREATE DATABASE ${pool.options.database}`);
+      console.log(`✅ Created database "${pool.options.database}"`);
+    }
     
     client.release();
-    await pool.end();
-    
-    console.log("\n?? Database connection successful!");
-    
+    process.exit(0);
   } catch (error) {
-    console.error("? Connection failed:", error.message);
-    console.log("\n?? Troubleshooting:");
-    console.log("1. Check if password 'Francis123#' is correct");
-    console.log("2. Check if PostgreSQL service is running");
-    console.log("3. Try connecting with pgAdmin to verify credentials");
+    console.error('❌ Connection failed:', error.message);
+    console.log('\n💡 Troubleshooting:');
+    console.log('1. Check if PostgreSQL service is running');
+    console.log('2. Verify password is correct');
+    console.log('3. Try these common PostgreSQL passwords:');
+    console.log('   - postgres');
+    console.log('   - password');
+    console.log('   - (empty/blank)');
+    console.log('   - admin');
+    console.log('   - root');
+    
+    process.exit(1);
   }
 }
 
-test();
+testConnection();

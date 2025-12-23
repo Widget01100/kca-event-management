@@ -1,0 +1,145 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>KCA Event System - Data Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f2f2f2; }
+        .uuid { font-family: monospace; font-size: 12px; color: #666; }
+        .success { color: green; }
+        .error { color: red; }
+        button { background: #1e3c72; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2a5298; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>KCA Event System - Live Data Viewer</h1>
+            <p>Real-time view of your database and API</p>
+        </div>
+
+        <div class="card">
+            <h2>API Status</h2>
+            <div id="api-status">Checking...</div>
+        </div>
+
+        <div class="card">
+            <h2>Events in Database</h2>
+            <button onclick="loadEvents()">Refresh Events</button>
+            <div id="events-container">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>System Statistics</h2>
+            <div id="stats-container">Loading...</div>
+        </div>
+
+        <div class="card">
+            <h2>API Endpoints</h2>
+            <div class="endpoints">
+                <button onclick="testEndpoint('health')">Test /health</button>
+                <button onclick="testEndpoint('events')">Test /events</button>
+                <button onclick="testEndpoint('stats')">Test /stats</button>
+                <button onclick="testEndpoint('test-db')">Test /test-db</button>
+            </div>
+            <div id="endpoint-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        // Load events on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkApiStatus();
+            loadEvents();
+            loadStats();
+        });
+
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('api-status').innerHTML = 
+                    `<span class="success">✅ API is running</span><br>
+                     Version: ${data.version}<br>
+                     Time: ${new Date(data.timestamp).toLocaleString()}`;
+            } catch (error) {
+                document.getElementById('api-status').innerHTML = 
+                    `<span class="error">❌ API is not accessible</span><br>
+                     Error: ${error.message}`;
+            }
+        }
+
+        async function loadEvents() {
+            try {
+                const response = await fetch(`${API_BASE}/events`);
+                const data = await response.json();
+                
+                let html = `<p>Found ${data.count} events</p>`;
+                html += '<table><tr><th>Title</th><th>Date</th><th>Venue</th><th>Capacity</th><th>ID</th></tr>';
+                
+                data.data.forEach(event => {
+                    html += `<tr>
+                        <td><strong>${event.title}</strong></td>
+                        <td>${new Date(event.start_date).toLocaleDateString()}</td>
+                        <td>${event.venue}</td>
+                        <td>${event.capacity}</td>
+                        <td class="uuid">${event.id.substring(0, 8)}...</td>
+                    </tr>`;
+                });
+                
+                html += '</table>';
+                document.getElementById('events-container').innerHTML = html;
+            } catch (error) {
+                document.getElementById('events-container').innerHTML = 
+                    `<span class="error">Error loading events: ${error.message}</span>`;
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+                
+                const stats = data.data;
+                let html = `<table>
+                    <tr><td>Total Users</td><td><strong>${stats.users}</strong></td></tr>
+                    <tr><td>Total Events</td><td><strong>${stats.events}</strong></td></tr>
+                    <tr><td>Total Resources</td><td><strong>${stats.resources}</strong></td></tr>
+                    <tr><td>University</td><td>${stats.university}</td></tr>
+                    <tr><td>Campuses</td><td>${stats.campuses.join(', ')}</td></tr>
+                </table>`;
+                
+                document.getElementById('stats-container').innerHTML = html;
+            } catch (error) {
+                document.getElementById('stats-container').innerHTML = 
+                    `<span class="error">Error loading stats: ${error.message}</span>`;
+            }
+        }
+
+        async function testEndpoint(endpoint) {
+            const resultDiv = document.getElementById('endpoint-result');
+            resultDiv.innerHTML = `Testing /${endpoint}...`;
+            
+            try {
+                const response = await fetch(`${API_BASE}/${endpoint}`);
+                const data = await response.json();
+                resultDiv.innerHTML = 
+                    `<span class="success">✅ /${endpoint} is working</span><br>
+                     <pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = 
+                    `<span class="error">❌ /${endpoint} failed</span><br>
+                     Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
