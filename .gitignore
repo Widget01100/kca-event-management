@@ -56,3 +56,6 @@ secrets.json
 backend/services/serviceAccountKey.json
 *.key
 secrets.json
+
+# Firebase backup
+backend/firebase-backup/
