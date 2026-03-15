@@ -1,5 +1,10 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import './App.css';
+import api from './services/api';
+import auth from './services/auth';
+
+// Import pages
 import HomePage from './pages/HomePage';
 import EventsPage from './pages/EventsPage';
 import EventDetailsPage from './pages/EventDetailsPage';
@@ -8,18 +13,17 @@ import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import AdminDashboard from './pages/AdminDashboard';
 import StaffDashboard from './pages/StaffDashboard';
+import ProfilePage from './pages/ProfilePage';
+
+// Layout components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import api from './services/api';
-import auth from './services/auth';
 
-function App() {
-    const [currentPage, setCurrentPage] = useState('home');
-    const [selectedEvent, setSelectedEvent] = useState(null);
+function AppContent() {
     const [user, setUser] = useState(null);
     const [events, setEvents] = useState([]);
-    const [stats, setStats] = useState({});
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const currentUser = auth.getCurrentUser();
@@ -27,21 +31,15 @@ function App() {
             setUser(currentUser);
             api.setAuthHeaders(currentUser);
         }
-        fetchData();
+        fetchEvents();
     }, []);
 
-    const fetchData = async () => {
+    const fetchEvents = async () => {
         try {
-            const [eventsData, statsData] = await Promise.all([
-                api.getEvents(),
-                api.getStats()
-            ]);
-            console.log('Fetched events:', eventsData.data);
-            console.log('Fetched stats:', statsData.data);
-            setEvents(eventsData.data || []);
-            setStats(statsData.data || {});
+            const data = await api.getEvents();
+            setEvents(data.data || []);
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error fetching events:', error);
         } finally {
             setLoading(false);
         }
@@ -50,119 +48,122 @@ function App() {
     const handleLogin = (userData) => {
         setUser(userData);
         api.setAuthHeaders(userData);
-        fetchData(); // Refresh data after login
         if (userData.role === 'admin') {
-            setCurrentPage('admin');
+            navigate('/admin/dashboard');
         } else if (userData.role === 'staff') {
-            setCurrentPage('staff');
+            navigate('/staff/dashboard');
         } else {
-            setCurrentPage('dashboard');
+            navigate('/dashboard');
         }
     };
 
     const handleLogout = () => {
         auth.logout();
         setUser(null);
-        setCurrentPage('home');
+        navigate('/');
     };
 
     const handleRegister = async (eventId) => {
         if (!user) {
-            setCurrentPage('login');
+            navigate('/login');
             return;
         }
         try {
             await api.registerForEvent(eventId);
             alert('Successfully registered!');
-            fetchData(); // Refresh events and stats
+            fetchEvents(); // Refresh events
         } catch (error) {
             alert(error.message || 'Registration failed');
         }
     };
 
-    const renderPage = () => {
-        if (loading) {
-            return (
-                <div style={styles.loading}>
-                    <h2>Loading KCA Event System...</h2>
-                </div>
-            );
-        }
-
-        switch(currentPage) {
-            case 'home':
-                return <HomePage 
-                    events={events} 
-                    stats={stats}
-                    onViewEvent={(event) => { setSelectedEvent(event); setCurrentPage('event'); }}
-                    onRegister={handleRegister}
-                    user={user}
-                />;
-            case 'events':
-                return <EventsPage 
-                    events={events} 
-                    onViewEvent={(event) => { setSelectedEvent(event); setCurrentPage('event'); }}
-                    onRegister={handleRegister}
-                    user={user}
-                />;
-            case 'event':
-                return <EventDetailsPage 
-                    event={selectedEvent} 
-                    onBack={() => setCurrentPage('events')}
-                    onRegister={() => handleRegister(selectedEvent.id)}
-                    user={user}
-                />;
-            case 'login':
-                return <LoginPage 
-                    onLogin={handleLogin}
-                    onSwitch={() => setCurrentPage('signup')}
-                />;
-            case 'signup':
-                return <SignupPage 
-                    onSignup={handleLogin}
-                    onSwitch={() => setCurrentPage('login')}
-                />;
-            case 'dashboard':
-                return <DashboardPage 
-                    user={user} 
-                    events={events}
-                />;
-            case 'staff':
-                return <StaffDashboard 
-                    user={user} 
-                    events={events}
-                    onEventUpdate={fetchData}
-                />;
-            case 'admin':
-                return <AdminDashboard 
-                    user={user} 
-                    events={events}
-                    onEventUpdate={fetchData}
-                />;
-            default:
-                return <HomePage 
-                    events={events} 
-                    stats={stats}
-                    onViewEvent={(event) => { setSelectedEvent(event); setCurrentPage('event'); }}
-                    onRegister={handleRegister}
-                    user={user}
-                />;
-        }
-    };
+    if (loading) {
+        return (
+            <div style={styles.loading}>
+                <h2>Loading KCA Event System...</h2>
+            </div>
+        );
+    }
 
     return (
         <div style={styles.app}>
-            <Navbar 
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                user={user}
-                onLogout={handleLogout}
-            />
+            <Navbar user={user} onLogout={handleLogout} />
             <main style={styles.main}>
-                {renderPage()}
+                <Routes>
+                    <Route path="/" element={
+                        <HomePage 
+                            events={events} 
+                            onViewEvent={(event) => navigate(`/event/${event.id}`)}
+                            onRegister={handleRegister}
+                            user={user}
+                        />
+                    } />
+                    
+                    <Route path="/events" element={
+                        <EventsPage 
+                            events={events} 
+                            onViewEvent={(event) => navigate(`/event/${event.id}`)}
+                            onRegister={handleRegister}
+                            user={user}
+                        />
+                    } />
+                    
+                    <Route path="/event/:id" element={
+                        <EventDetailsPage 
+                            onRegister={handleRegister}
+                            user={user}
+                        />
+                    } />
+                    
+                    <Route path="/login" element={
+                        <LoginPage 
+                            onLogin={handleLogin}
+                            onSwitch={() => navigate('/signup')}
+                        />
+                    } />
+                    
+                    <Route path="/signup" element={
+                        <SignupPage 
+                            onSignup={handleLogin}
+                            onSwitch={() => navigate('/login')}
+                        />
+                    } />
+                    
+                    <Route path="/dashboard" element={
+                        <DashboardPage user={user} events={events} />
+                    } />
+                    
+                    <Route path="/staff/dashboard" element={
+                        <StaffDashboard 
+                            user={user} 
+                            events={events}
+                            onEventUpdate={fetchEvents}
+                        />
+                    } />
+                    
+                    <Route path="/admin/dashboard" element={
+                        <AdminDashboard 
+                            user={user} 
+                            events={events}
+                            onEventUpdate={fetchEvents}
+                        />
+                    } />
+                    
+                    <Route path="/profile" element={
+                        <ProfilePage user={user} />
+                    } />
+                </Routes>
             </main>
             <Footer />
         </div>
+    );
+}
+
+function App() {
+    return (
+        <BrowserRouter>
+            <AppContent />
+        </BrowserRouter>
     );
 }
 

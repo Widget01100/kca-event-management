@@ -49,7 +49,6 @@ app.get('/api/events', async (req, res) => {
         const events = await database.getAllEvents();
         res.json({ success: true, count: events.length, data: events });
     } catch (error) {
-        console.error('Events error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -78,69 +77,45 @@ app.get('/api/categories', async (req, res) => {
     }
 });
 
-// Get Statistics - FIXED VERSION
+// FIXED STATS ENDPOINT
 app.get('/api/stats', async (req, res) => {
     try {
-        // Get total events count
-        const totalEvents = await new Promise((resolve, reject) => {
+        const eventsCount = await new Promise((resolve, reject) => {
             db.get('SELECT COUNT(*) as count FROM events WHERE status = "active"', [], (err, row) => {
                 if (err) reject(err);
                 else resolve(row?.count || 0);
             });
         });
         
-        // Get upcoming events count (future dates)
-        const upcomingEvents = await new Promise((resolve, reject) => {
+        const upcomingCount = await new Promise((resolve, reject) => {
             db.get('SELECT COUNT(*) as count FROM events WHERE date >= date("now") AND status = "active"', [], (err, row) => {
                 if (err) reject(err);
                 else resolve(row?.count || 0);
             });
         });
         
-        // Get total registrations count
         const totalRegistrations = await new Promise((resolve, reject) => {
-            db.get('SELECT COUNT(*) as count FROM registrations WHERE status = "confirmed"', [], (err, row) => {
+            db.get('SELECT SUM(registered) as total FROM events', [], (err, row) => {
                 if (err) reject(err);
-                else resolve(row?.count || 0);
+                else resolve(row?.total || 0);
             });
         });
         
-        // Get total users count
-        const totalUsers = await new Promise((resolve, reject) => {
+        const usersCount = await new Promise((resolve, reject) => {
             db.get('SELECT COUNT(*) as count FROM users', [], (err, row) => {
                 if (err) reject(err);
                 else resolve(row?.count || 0);
             });
         });
 
-        // Get events by category - FIXED
-        const categoriesWithEvents = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT 
-                    c.name,
-                    COUNT(e.id) as event_count
-                FROM categories c
-                LEFT JOIN events e ON c.id = e.category_id AND e.status = 'active'
-                GROUP BY c.id, c.name
-                ORDER BY c.name
-            `, [], (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows || []);
-            });
-        });
-
-        console.log('📊 Stats - Total Events:', totalEvents);
-        console.log('📊 Stats - Category counts:', categoriesWithEvents);
-
         res.json({ 
             success: true, 
             data: {
-                total_events: totalEvents,
-                upcoming_events: upcomingEvents,
+                total_events: eventsCount,
+                upcoming_events: upcomingCount,
                 total_registrations: totalRegistrations,
-                total_users: totalUsers,
-                active_venues: 8,
-                categories: categoriesWithEvents
+                total_users: usersCount,
+                active_venues: 8
             }
         });
     } catch (error) {
@@ -171,7 +146,7 @@ app.post('/api/events', async (req, res) => {
         
         const year = new Date(date).getFullYear();
         const categories = await database.getAllCategories();
-        const category = categories.find(c => c.id === parseInt(category_id));
+        const category = categories.find(c => c.id === category_id);
         const categoryCode = category ? category.name.substring(0, 2).toUpperCase() : 'EV';
         
         const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
@@ -184,7 +159,7 @@ app.post('/api/events', async (req, res) => {
             date,
             time,
             venue,
-            category_id: parseInt(category_id),
+            category_id,
             capacity: parseInt(capacity),
             organizer,
             image_url: image_url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87',
@@ -453,15 +428,10 @@ app.get('/api/auth/me', async (req, res) => {
 app.get('/api/test-db', async (req, res) => {
     try {
         const events = await database.getAllEvents();
-        const users = await database.getAllUsers();
-        const categories = await database.getAllCategories();
-        
         res.json({
             status: "connected",
             message: "SQLite database is working",
             events_count: events.length,
-            users_count: users.length,
-            categories_count: categories.length,
             university: "KCA University"
         });
     } catch (error) {
@@ -469,7 +439,7 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
-// Database Admin View
+// Database Admin View (Simplified - Working Version)
 app.get('/api/admin/database', async (req, res) => {
     try {
         const events = await new Promise((resolve, reject) => {
@@ -480,7 +450,7 @@ app.get('/api/admin/database', async (req, res) => {
         });
         
         const users = await new Promise((resolve, reject) => {
-            db.all('SELECT id, email, first_name, last_name, role FROM users', [], (err, rows) => {
+            db.all('SELECT id, email, first_name, last_name, role, is_active FROM users', [], (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows || []);
             });
@@ -493,13 +463,6 @@ app.get('/api/admin/database', async (req, res) => {
             });
         });
         
-        const registrations = await new Promise((resolve, reject) => {
-            db.all('SELECT COUNT(*) as count FROM registrations', [], (err, row) => {
-                if (err) reject(err);
-                else resolve(row[0]?.count || 0);
-            });
-        });
-        
         let html = `
         <!DOCTYPE html>
         <html>
@@ -508,9 +471,6 @@ app.get('/api/admin/database', async (req, res) => {
             <style>
                 body { font-family: Arial; background: #f5f5f5; padding: 20px; }
                 h1 { color: #1e3c72; }
-                .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin: 20px 0; }
-                .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; }
-                .stat-number { font-size: 24px; font-weight: bold; color: #1e3c72; }
                 .card { background: white; border-radius: 10px; padding: 20px; margin: 20px 0; }
                 table { width: 100%; border-collapse: collapse; }
                 th { background: #1e3c72; color: white; padding: 10px; }
@@ -520,20 +480,13 @@ app.get('/api/admin/database', async (req, res) => {
         </head>
         <body>
             <h1>🎓 KCA University Database</h1>
-            <div class="stats">
-                <div class="stat-card"><div class="stat-number">${users.length}</div><div>Users</div></div>
-                <div class="stat-card"><div class="stat-number">${events.length}</div><div>Events</div></div>
-                <div class="stat-card"><div class="stat-number">${categories.length}</div><div>Categories</div></div>
-                <div class="stat-card"><div class="stat-number">${registrations}</div><div>Registrations</div></div>
-            </div>
             <div class="card">
                 <h2>Events (${events.length})</h2>
                 <table>
-                    <tr><th>ID</th><th>Title</th><th>Date</th><th>Venue</th><th>Category</th></tr>`;
+                    <tr><th>ID</th><th>Title</th><th>Date</th><th>Venue</th></tr>`;
         
         events.forEach(e => {
-            const cat = categories.find(c => c.id === e.category_id);
-            html += `<tr><td>${e.id}</td><td>${e.title}</td><td>${e.date}</td><td>${e.venue}</td><td><span class="badge">${cat?.name || 'Unknown'}</span></td></tr>`;
+            html += `<tr><td>${e.id}</td><td>${e.title}</td><td>${e.date}</td><td>${e.venue}</td></tr>`;
         });
         
         html += `</table></div>
@@ -597,14 +550,53 @@ app.listen(PORT, () => {
     console.log('='.repeat(70));
     console.log(`   ✅ Backend running on port ${PORT}`);
     console.log(`   🔗 API: http://localhost:${PORT}/api`);
-    console.log(`   📊 Health: http://localhost:${PORT}/api/health`);
     console.log(`   🗄️  Admin: http://localhost:${PORT}/api/admin/database`);
     console.log('='.repeat(70));
     console.log(`   🔑 TEST CREDENTIALS:`);
-    console.log(`      admin@kca.ac.ke / Admin2026!`);
-    console.log(`      dr.otieno@kca.ac.ke / Staff2026!`);
-    console.log(`      prof.kamau@kca.ac.ke / Staff2026!`);
-    console.log(`      brian.odhiambo@students.kca.ac.ke / Student2026!`);
-    console.log(`      sarah.wanjiku@students.kca.ac.ke / Student2026!`);
+    console.log(`      student@students.kca.ac.ke / Student123!`);
+    console.log(`      staff@staff.kca.ac.ke / Staff123!`);
+    console.log(`      admin@kca.ac.ke / Admin123!`);
     console.log('='.repeat(70));
 });
+/ /   D a t a b a s e   B a c k u p   ( A d m i n   o n l y ) 
+ a p p . p o s t ( ' / a p i / a d m i n / b a c k u p ' ,   a s y n c   ( r e q ,   r e s )   = >   { 
+         t r y   { 
+                 c o n s t   u s e r   =   g e t C u r r e n t U s e r ( r e q ) ; 
+                 i f   ( u s e r . r o l e   ! = =   ' a d m i n ' )   { 
+                         r e t u r n   r e s . s t a t u s ( 4 0 3 ) . j s o n ( {   s u c c e s s :   f a l s e ,   m e s s a g e :   " A c c e s s   d e n i e d "   } ) ; 
+                 } 
+ 
+                 c o n s t   f s   =   r e q u i r e ( ' f s ' ) ; 
+                 c o n s t   p a t h   =   r e q u i r e ( ' p a t h ' ) ; 
+                 c o n s t   s o u r c e D b   =   p a t h . j o i n ( _ _ d i r n a m e ,   ' . . ' ,   ' d a t a b a s e ' ,   ' k c a _ e v e n t s . d b ' ) ; 
+                 c o n s t   b a c k u p D i r   =   p a t h . j o i n ( _ _ d i r n a m e ,   ' . . ' ,   ' d a t a b a s e ' ,   ' b a c k u p s ' ) ; 
+                 
+                 i f   ( ! f s . e x i s t s S y n c ( b a c k u p D i r ) )   { 
+                         f s . m k d i r S y n c ( b a c k u p D i r ,   {   r e c u r s i v e :   t r u e   } ) ; 
+                 } 
+ 
+                 c o n s t   t i m e s t a m p   =   n e w   D a t e ( ) . t o I S O S t r i n g ( ) . r e p l a c e ( / [ : . ] / g ,   ' - ' ) ; 
+                 c o n s t   b a c k u p F i l e   =   p a t h . j o i n ( b a c k u p D i r ,   ` k c a _ e v e n t s _ b a c k u p _ $ { t i m e s t a m p } . d b ` ) ; 
+ 
+                 f s . c o p y F i l e S y n c ( s o u r c e D b ,   b a c k u p F i l e ) ; 
+                 
+                 / /   K e e p   o n l y   l a s t   1 0   b a c k u p s 
+                 c o n s t   f i l e s   =   f s . r e a d d i r S y n c ( b a c k u p D i r ) 
+                         . f i l t e r ( f   = >   f . s t a r t s W i t h ( ' k c a _ e v e n t s _ b a c k u p _ ' ) ) 
+                         . m a p ( f   = >   p a t h . j o i n ( b a c k u p D i r ,   f ) ) 
+                         . s o r t ( ( a ,   b )   = >   f s . s t a t S y n c ( b ) . m t i m e   -   f s . s t a t S y n c ( a ) . m t i m e ) ; 
+ 
+                 i f   ( f i l e s . l e n g t h   >   1 0 )   { 
+                         f i l e s . s l i c e ( 1 0 ) . f o r E a c h ( f i l e   = >   f s . u n l i n k S y n c ( f i l e ) ) ; 
+                 } 
+ 
+                 r e s . j s o n ( {   
+                         s u c c e s s :   t r u e ,   
+                         m e s s a g e :   ` D a t a b a s e   b a c k e d   u p   s u c c e s s f u l l y ` , 
+                         f i l e :   b a c k u p F i l e 
+                 } ) ; 
+         }   c a t c h   ( e r r o r )   { 
+                 r e s . s t a t u s ( 5 0 0 ) . j s o n ( {   s u c c e s s :   f a l s e ,   e r r o r :   e r r o r . m e s s a g e   } ) ; 
+         } 
+ } ) ;  
+ 

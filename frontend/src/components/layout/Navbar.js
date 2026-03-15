@@ -1,65 +1,54 @@
 ﻿import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-const Navbar = ({ currentPage, setCurrentPage, user, onLogout }) => {
+const Navbar = ({ user, onLogout }) => {
+    const navigate = useNavigate();
+
+    const getDashboardLink = () => {
+        if (!user) return '#';
+        if (user.role === 'admin') return '/admin/dashboard';
+        if (user.role === 'staff') return '/staff/dashboard';
+        return '/dashboard';
+    };
+
     return (
         <nav style={styles.navbar}>
             <div style={styles.container}>
-                <div style={styles.logo} onClick={() => setCurrentPage('home')}>
-                    <span style={styles.logoText}>KCA University</span>
-                </div>
+                <Link to="/" style={styles.logo}>
+                    KCA University
+                </Link>
+                
                 <div style={styles.links}>
-                    <button 
-                        style={currentPage === 'home' ? styles.activeLink : styles.link}
-                        onClick={() => setCurrentPage('home')}
-                    >
-                        Home
-                    </button>
-                    <button 
-                        style={currentPage === 'events' ? styles.activeLink : styles.link}
-                        onClick={() => setCurrentPage('events')}
-                    >
-                        Events
-                    </button>
+                    <Link to="/" style={styles.link}>Home</Link>
+                    <Link to="/events" style={styles.link}>Events</Link>
+                    
                     {user && (
-                        <button 
-                            style={
-                                (currentPage === 'dashboard' || 
-                                 currentPage === 'staff' || 
-                                 currentPage === 'admin') ? styles.activeLink : styles.link
-                            }
-                            onClick={() => {
-                                if (user.role === 'admin') setCurrentPage('admin');
-                                else if (user.role === 'staff') setCurrentPage('staff');
-                                else setCurrentPage('dashboard');
-                            }}
-                        >
-                            Dashboard
-                        </button>
-                    )}
-                    {user ? (
                         <>
-                            <span style={styles.userInfo}>
+                            <Link to={getDashboardLink()} style={styles.link}>
+                                Dashboard
+                            </Link>
+                            <Link to="/profile" style={styles.link}>
+                                Profile
+                            </Link>
+                        </>
+                    )}
+                    
+                    {user ? (
+                        <div style={styles.userSection}>
+                            <span style={styles.userName}>
                                 {user.firstName} ({user.role})
                             </span>
-                            <button style={styles.logoutButton} onClick={onLogout}>
+                            <button onClick={onLogout} style={styles.logoutButton}>
                                 Logout
                             </button>
-                        </>
+                        </div>
                     ) : (
-                        <>
-                            <button 
-                                style={currentPage === 'login' ? styles.activeLink : styles.link}
-                                onClick={() => setCurrentPage('login')}
-                            >
-                                Login
-                            </button>
-                            <button 
-                                style={currentPage === 'signup' ? styles.activeButton : styles.primaryButton}
-                                onClick={() => setCurrentPage('signup')}
-                            >
+                        <div style={styles.authLinks}>
+                            <Link to="/login" style={styles.link}>Login</Link>
+                            <Link to="/signup" style={styles.signupButton}>
                                 Sign Up
-                            </button>
-                        </>
+                            </Link>
+                        </div>
                     )}
                 </div>
             </div>
@@ -82,71 +71,57 @@ const styles = {
         alignItems: 'center'
     },
     logo: {
-        cursor: 'pointer'
-    },
-    logoText: {
         color: '#eab308',
         fontSize: '1.5rem',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        textDecoration: 'none'
     },
     links: {
+        display: 'flex',
+        gap: '1.5rem',
+        alignItems: 'center'
+    },
+    link: {
+        color: 'white',
+        textDecoration: 'none',
+        fontSize: '1rem',
+        padding: '0.5rem',
+        borderRadius: '5px',
+        transition: 'background 0.3s'
+    },
+    userSection: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        marginLeft: '1rem',
+        paddingLeft: '1rem',
+        borderLeft: '1px solid rgba(255,255,255,0.3)'
+    },
+    userName: {
+        color: '#eab308',
+        fontSize: '0.9rem'
+    },
+    logoutButton: {
+        background: 'rgba(255,255,255,0.2)',
+        color: 'white',
+        border: 'none',
+        padding: '0.5rem 1rem',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        fontSize: '0.9rem'
+    },
+    authLinks: {
         display: 'flex',
         gap: '1rem',
         alignItems: 'center'
     },
-    link: {
-        background: 'none',
-        border: 'none',
-        color: 'white',
+    signupButton: {
+        background: '#eab308',
+        color: '#1e3c72',
+        textDecoration: 'none',
         padding: '0.5rem 1rem',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        borderRadius: '5px'
-    },
-    activeLink: {
-        background: 'rgba(255,255,255,0.2)',
-        border: 'none',
-        color: 'white',
-        padding: '0.5rem 1rem',
-        cursor: 'pointer',
-        fontSize: '1rem',
         borderRadius: '5px',
         fontWeight: 'bold'
-    },
-    primaryButton: {
-        background: '#eab308',
-        border: 'none',
-        color: '#1e3c72',
-        padding: '0.5rem 1rem',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        borderRadius: '5px',
-        fontWeight: 'bold'
-    },
-    activeButton: {
-        background: '#eab308',
-        border: 'none',
-        color: '#1e3c72',
-        padding: '0.5rem 1rem',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        borderRadius: '5px',
-        fontWeight: 'bold',
-        boxShadow: '0 0 0 2px white'
-    },
-    logoutButton: {
-        background: 'rgba(255,255,255,0.2)',
-        border: 'none',
-        color: 'white',
-        padding: '0.5rem 1rem',
-        cursor: 'pointer',
-        fontSize: '1rem',
-        borderRadius: '5px'
-    },
-    userInfo: {
-        color: '#eab308',
-        padding: '0.5rem 1rem',
-        fontSize: '0.9rem'
     }
 };
 

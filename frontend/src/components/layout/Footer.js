@@ -1,85 +1,58 @@
 ﻿import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
-        <footer style={styles.footer}>
-            <div style={styles.container}>
-                <div style={styles.grid}>
-                    <div style={styles.section}>
-                        <h4 style={styles.title}>KCA University</h4>
-                        <p style={styles.motto}>"Advancing Knowledge, Driving Change"</p>
-                        <p style={styles.copyright}>
+        <footer className="footer">
+            <div className="footer-container">
+                <div className="footer-grid">
+                    <div className="footer-section">
+                        <h4 className="footer-title">KCA University</h4>
+                        <p className="footer-motto">"Advancing Knowledge, Driving Change"</p>
+                        <p className="footer-text">
                             © 2026 Francis Tom (23/05349)<br />
                             DIT 503 Project
                         </p>
                     </div>
-                    <div style={styles.section}>
-                        <h4 style={styles.title}>Quick Links</h4>
-                        <ul style={styles.list}>
-                            <li style={styles.listItem}>Home</li>
-                            <li style={styles.listItem}>Events</li>
-                            <li style={styles.listItem}>Dashboard</li>
+                    
+                    <div className="footer-section">
+                        <h4 className="footer-title">Quick Links</h4>
+                        <ul className="footer-links">
+                            <li className="footer-link-item">
+                                <Link to="/" className="footer-link">Home</Link>
+                            </li>
+                            <li className="footer-link-item">
+                                <Link to="/events" className="footer-link">Events</Link>
+                            </li>
+                            <li className="footer-link-item">
+                                <Link to="/dashboard" className="footer-link">Dashboard</Link>
+                            </li>
                         </ul>
                     </div>
-                    <div style={styles.section}>
-                        <h4 style={styles.title}>Contact</h4>
-                        <ul style={styles.list}>
-                            <li style={styles.listItem}>📧 events@kca.ac.ke</li>
-                            <li style={styles.listItem}>📞 +254 123 456 789</li>
-                            <li style={styles.listItem}>📍 Nairobi, Kenya</li>
-                        </ul>
+                    
+                    <div className="footer-section">
+                        <h4 className="footer-title">Contact</h4>
+                        <div className="footer-contact-item">
+                            <span className="footer-icon">📧</span>
+                            <a href="mailto:events@kca.ac.ke">events@kca.ac.ke</a>
+                        </div>
+                        <div className="footer-contact-item">
+                            <span className="footer-icon">📞</span>
+                            <span>+254 123 456 789</span>
+                        </div>
+                        <div className="footer-contact-item">
+                            <span className="footer-icon">📍</span>
+                            <span>Nairobi, Kenya</span>
+                        </div>
                     </div>
+                </div>
+                
+                <div className="footer-bottom">
+                    <p>Made with 🎓 for KCA University | "Advancing Knowledge, Driving Change"</p>
                 </div>
             </div>
         </footer>
     );
-};
-
-const styles = {
-    footer: {
-        background: '#1e3c72',
-        color: 'white',
-        padding: '3rem 0 1.5rem',
-        marginTop: '2rem'
-    },
-    container: {
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 20px'
-    },
-    grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '2rem',
-        marginBottom: '2rem'
-    },
-    section: {
-        textAlign: 'left'
-    },
-    title: {
-        color: '#eab308',
-        marginBottom: '1rem',
-        fontSize: '1.2rem'
-    },
-    motto: {
-        color: 'rgba(255,255,255,0.8)',
-        fontStyle: 'italic',
-        marginBottom: '1rem'
-    },
-    copyright: {
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: '0.9rem'
-    },
-    list: {
-        listStyle: 'none',
-        padding: 0,
-        margin: 0
-    },
-    listItem: {
-        color: 'rgba(255,255,255,0.8)',
-        marginBottom: '0.5rem',
-        cursor: 'pointer'
-    }
 };
 
 export default Footer;
